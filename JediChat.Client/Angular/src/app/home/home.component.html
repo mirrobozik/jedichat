@@ -1,0 +1,28 @@
+<div class="container">
+    <div class="row">
+        <div class="offset-md-4"></div>
+        <div class="col-md-4 col-sm-12">
+           
+            <h1 class="display-2 mt-4 mb-4 text-center">Jedi Chat</h1>
+      
+            <div class="alert alert-info" *ngIf="connecting">
+              Connecting...
+            </div>
+                  
+            <p class="text-center">Enter your name and start chat with other Jedis.</p>
+            <form (ngSubmit)="login()" #connectForm="ngForm">
+                <div class="form-group">
+                  <input type="text" 
+                    placeholder="Your Name" 
+                    name="userName" 
+                    [(ngModel)]="userName"
+                    required
+                    class="form-control form-control-lg"/>
+                </div>
+                <button type="submit" 
+                  class="btn btn-lg btn-block btn-primary" 
+                  [disabled]="connectForm.invalid">Log In</button>
+              </form>
+        </div>
+      </div>
+</div>

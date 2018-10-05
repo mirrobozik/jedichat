@@ -1,0 +1,6 @@
+<div class="list-group">
+  <a href="#" class="list-group-item" *ngFor="let uuid of users"     
+    [routerLink]="[uuid]"
+    [routerLinkActive]="'active'"
+    >{{uuid}}</a>        
+</div>
