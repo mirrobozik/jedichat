@@ -14,6 +14,7 @@ namespace JediChat.Server
         {
             services.AddSingleton<IPresenceService, PresenceService>();
             services.AddSingleton<IMessageStore, InMemoryMessageStore>();
+            services.AddSingleton<IUserStore, InMemoryUserStore>();
 
             services.AddSignalR();
 

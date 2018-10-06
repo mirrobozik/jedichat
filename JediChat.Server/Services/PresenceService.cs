@@ -27,27 +27,28 @@ namespace JediChat.Server.Services
                 ConnectionIds = new HashSet<string>()
             });
 
-            lock (user.ConnectionIds)
-            {
+            //lock (user.ConnectionIds)
+            //{
 
-                user.ConnectionIds.Add(connectionId);
+            //    user.ConnectionIds.Add(connectionId);
 
-                if (user.ConnectionIds.Count == 1)
-                {
-                    _hubContext.Clients
-                        .AllExcept(user.ConnectionIds.ToArray())
-                        .Joined(user.Uuid);
-                }
+            //    if (user.ConnectionIds.Count == 1)
+            //    {
+            //        var onlineEvent = new PresenceEvent(PresenceEvent.MemberStateOnline, user.Uuid);
+            //        _hubContext.Clients
+            //            .AllExcept(user.ConnectionIds.ToArray())
+            //            .Presence(onlineEvent);
+            //    }
 
-                var members = _users.Values
-                                .Where(u=>u.Uuid!=uuid)
-                                .Select(v=>v.Uuid)
-                                .ToArray();
-                _hubContext.Clients
-                    .Client(connectionId)
-                    .Members(members)
-                    ;
-            }
+            //    var members = _users.Values
+            //                    .Where(u=>u.Uuid!=uuid)
+            //                    .Select(v=>v.Uuid)
+            //                    .ToArray();
+            //    _hubContext.Clients
+            //        .Client(connectionId)
+            //        .Members(members)
+            //        ;
+            //}
 
             return Task.CompletedTask;
         }
@@ -58,25 +59,25 @@ namespace JediChat.Server.Services
             
             if (user != null)
             {
-                lock (user.ConnectionIds)
-                {
+                //lock (user.ConnectionIds)
+                //{
 
-                    user.ConnectionIds.RemoveWhere(cid => cid.Equals(connectionId));
+                //    user.ConnectionIds.RemoveWhere(cid => cid.Equals(connectionId));
 
-                    if (!user.ConnectionIds.Any())
-                    {
+                //    if (!user.ConnectionIds.Any())
+                //    {
+                //        var offlineEvent = new PresenceEvent(PresenceEvent.MemberStateOffline, user.Uuid);
+                        
+                //        _users.TryRemove(user.Uuid, out _);
 
-                        UserInfo removedUser;
-                        _users.TryRemove(user.Uuid, out removedUser);
-
-                        // You might want to only broadcast this info if this 
-                        // is the last connection of the user and the user actual is 
-                        // now disconnected from all connections.                        
-                        _hubContext.Clients
-                            .AllExcept(connectionId)
-                            .Leaved(user.Uuid);
-                    }
-                }
+                //        // You might want to only broadcast this info if this 
+                //        // is the last connection of the user and the user actual is 
+                //        // now disconnected from all connections.                        
+                //        _hubContext.Clients
+                //            .AllExcept(connectionId)
+                //            .Presence(offlineEvent);
+                //    }
+                //}
             }
             return Task.CompletedTask;
         }

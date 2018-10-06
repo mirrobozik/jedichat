@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using JediChat.Server.Models;
 using JediChat.Server.Services;
@@ -11,15 +11,15 @@ namespace JediChat.Server.Hubs
     {
         #region Constructor
 
-        private readonly IPresenceService _presenceService;
         private IMessageStore _messageStore;
+        private readonly IUserStore _userStore;
         
         public ChatHub(
-            IPresenceService presenceService, 
-            IMessageStore messageStore)
+            IMessageStore messageStore, 
+            IUserStore userStore)
         {
-            _presenceService = presenceService;
             _messageStore = messageStore;
+            _userStore = userStore;
         }
 
         #endregion
@@ -39,38 +39,70 @@ namespace JediChat.Server.Hubs
 
             var connectionId = Context.ConnectionId;
 
-            await _presenceService.AddConnectionAsync(uuid, connectionId);
+            await _userStore.AddConnectionAsync(uuid, connectionId);
+
+            //await _presenceService.AddConnectionAsync(uuid, connectionId);
         }
 
         public override async Task OnDisconnectedAsync(Exception exception)
         {
-            await _presenceService.RemoveConnectionAsync(Context.ConnectionId);
+            await _userStore.RemoveConnectionAsync(Context.ConnectionId);
         }
 
         #endregion        
 
-        public async Task Send(ChatMessage message)
+        public async Task Send(MessageInputEvent messageInput)
         {
-            var sender = await _presenceService.GetUserByConnectionAsync(Context.ConnectionId);
-            var uuid = message.ToUuid;
-            var user = await _presenceService.GetUserAsync(uuid);
-            if (user!=null)
+            var sender = await _userStore.GetUserIdForConnectionAsync(Context.ConnectionId);
+
+            var output = new MessageOutputEvent
+            {                
+                Message = messageInput.Message,
+                Sender = sender
+            };
+
+            await Clients
+                .Group(messageInput.Group)
+                .Message(output);
+        }
+
+        public async Task Join(GroupChangeEvent evt)
+        {
+            //todo add all user connections to group(s)
+            var userId = await _userStore.GetUserIdForConnectionAsync(Context.ConnectionId);
+            var connections = await _userStore.GetUserConnectionsAsync(userId);
+
+            var tasks = evt.Groups
+                .Select(group => Groups.AddToGroupAsync(Context.ConnectionId, group));
+
+            await Task.WhenAll(tasks);
+            
+            await _userStore.AddUserToGroupsAsync(userId, evt.Groups);
+
+            // send presence event
+            var presenceEvents = evt.Groups.Select(g => new PresenceEvent
             {
-                message.FromUuid = sender.Uuid;
+                Action = PresenceAction.Join,
+                Group = g,
+                Uuid = userId
+            });
+            
+            var presenceTasks = presenceEvents.Select(e => Clients.GroupExcept(e.Group, connections).Presence(e));
 
-                var recipients = new List<string>(user.ConnectionIds)
-                {
-                    Context.ConnectionId
-                };
+            await Task.WhenAll(presenceTasks);
+        }
 
-                await Clients
-                    .Clients(recipients)
-                    .Message(message);
+        public async Task Leave(GroupChangeEvent evt)
+        {
+            var tasks = evt.Groups
+                .Select(group => Groups.RemoveFromGroupAsync(Context.ConnectionId, group));
 
-                _messageStore
-                    .AddAsync(message)
-                    .ConfigureAwait(false);
-            }
+            await Task.WhenAll(tasks);
+
+            var userId = await _userStore.GetUserIdForConnectionAsync(Context.ConnectionId);
+            await _userStore.RemoveUserFromGroupsAsync(userId, evt.Groups);
+
+            //todo send presence event
         }
 
     }
