@@ -29,5 +29,10 @@ namespace JediChat.Server.Services
         {
             throw new System.NotImplementedException();
         }
+
+        public Task<IReadOnlyList<string>> GetUserConnectionsAsync(string userId)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

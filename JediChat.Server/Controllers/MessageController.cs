@@ -1,9 +1,11 @@
 ﻿using System.Threading.Tasks;
 using JediChat.Server.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace JediChat.Server.Controllers
-{
+{    
+    [Authorize]
     [Route("messages")]
     public class MessageController : ControllerBase
     {
